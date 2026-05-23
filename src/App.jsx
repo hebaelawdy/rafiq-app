@@ -1,41 +1,33 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 const C = {purple:"#bf59d8",blue:"#07049e",white:"#ffffff",grad:"linear-gradient(135deg, #bf59d8 0%, #7b2fd4 50%, #07049e 100%)",gradSoft:"linear-gradient(135deg, rgba(191,89,216,0.10) 0%, rgba(7,4,158,0.10) 100%)"};
 const EMOTION_WHEEL = [{core:"فرح",color:"#FFD700",emoji:"😊",positive:true,sub:["سعادة","امتنان","ثقة","إلهام","فخر","بهجة","حماس","نشاط"]},{core:"حب",color:"#FF69B4",emoji:"🩷",positive:true,sub:["قبول","تعاطف","تقدير","ود","تعلق","دفء","اهتمام","حنان"]},{core:"مفاجأة",color:"#00CED1",emoji:"😲",positive:true,sub:["دهشة","ذهول","فضول","ارتباك","إثارة","انبهار","تساؤل","توقع"]},{core:"خوف",color:"#9B59B6",emoji:"😨",positive:false,sub:["قلق","توتر","خشية","ذعر","تردد","وجل","شك","إحجام"]},{core:"حزن",color:"#4169E1",emoji:"😢",positive:false,sub:["خسارة","وحدة","يأس","ندم","خيبة","ألم","ضعف","حزن عميق"]},{core:"غضب",color:"#FF4500",emoji:"😤",positive:false,sub:["إحباط","ضيق","حنق","غيظ","توتر","مرارة","كره","تهيج"]},{core:"اشمئزاز",color:"#556B2F",emoji:"🤢",positive:false,sub:["رفض","نفور","استياء","ازدراء","ملل","تقزز","إنكار","صد"]},{core:"توقع",color:"#FF8C00",emoji:"🤔",positive:null,sub:["اهتمام","يقظة","تركيز","ترقب","أمل","تخطيط","قلق خفي","تساؤل"]}];
 const BODY_AREAS = ["الصدر","الحلق","المعدة","الكتفين","الرأس","اليدين","الظهر","التنفس"];
 const RELEASE_ACTIONS = [{icon:"🫁",text:"تنفسي بعمق وتخيّلي إن مع كل زفير الشعور ده بيطلع من جسمك شوية شوية"},{icon:"🤲",text:"ضعي إيدك على المكان ده وقوليله: أنا شايفاكِ وأنا هنا"},{icon:"🚶",text:"قومي وامشي ببطء وحسّي بقدميك على الأرض"},{icon:"✍️",text:"اكتبي الشعور ده على ورقة بكل تفاصيله من غير رقابة"}];
 const MODIFY_ACTIONS = [{icon:"💭",text:"فكّري في لحظة حسيتِ فيها بأمان حقيقي وحاولي تستشعريها دلوقتي"},{icon:"🌿",text:"روحي للنافذة وخدي 3 أنفاس عميقة"},{icon:"🎵",text:"شغّلي أغنية بتريّحك وسيبي نفسك تحسيها"},{icon:"🧊",text:"اغسلي وشك بمية باردة"}];
 const EXPAND_ACTIONS = [{icon:"🌸",text:"خدي نفس عميق وتخيّلي إن الشعور ده بيتمدد ويملا جسمك كله"},{icon:"✍️",text:"اكتبي 3 أشياء بتشكريها دلوقتي"},{icon:"📞",text:"شاركي الشعور ده مع شخص بتحبيه"},{icon:"🎵",text:"شغّلي أغنية بتفرّحك وتحركي معاها"}];
-const SYSTEM_PROMPT = "أنت رفيق العافية المشاعرية — مرافقة نفسية دافئة. تكلمي بنفس لغة المستخدمة. اسألي سؤال واحد فقط في كل رد. أظهري تعاطفاً حقيقياً. لا تشخّصي. ردودك قصيرة ودافئة. خاطبي المستخدمة بصيغة المؤنث دائماً.";
-const STORE_KEY = "rafiq_v5";
+const STORE_KEY = "rafiq_v6";
 const load = () => { try { return JSON.parse(localStorage.getItem(STORE_KEY)||"{}"); } catch { return {}; } };
 const persist = (d) => { try { localStorage.setItem(STORE_KEY, JSON.stringify(d)); } catch {} };
 const todayKey = () => new Date().toISOString().slice(0,10);
 const DAYS_AR = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 const MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
-const TABS = [{id:"chat",icon:"💬",label:"رفيق"},{id:"track",icon:"📊",label:"تتبع"},{id:"remind",icon:"🔔",label:"تذكير"}];
-function callClaude(system, messages) {
-  return fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST",
-    headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_API_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body: JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,system,messages}),
-  }).then(r=>r.json()).then(d=>d.content?.[0]?.text||"...");
-}
+const TABS = [{id:"main",icon:"🌿",label:"رفيق"},{id:"track",icon:"📊",label:"تتبع"},{id:"remind",icon:"🔔",label:"تذكير"}];
 export default function App() {
-  const [tab, setTab] = useState("chat");
+  const [tab, setTab] = useState("main");
   const [data, setData] = useState(load);
   const updateData = useCallback((u) => { setData(p => { const n = typeof u==="function"?u(p):{...p,...u}; persist(n); return n; }); }, []);
   return (
     <div style={{minHeight:"100vh",maxWidth:480,margin:"0 auto",background:"#f7f4ff",fontFamily:"'Cairo','Tajawal',sans-serif",display:"flex",flexDirection:"column",direction:"rtl"}}>
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet"/>
       <div style={{position:"sticky",top:0,zIndex:20,background:C.grad,padding:"10px 16px",display:"flex",alignItems:"center",gap:10,boxShadow:"0 4px 24px rgba(7,4,158,0.28)"}}>
-        <div style={{width:46,height:46,borderRadius:"50%",background:"rgba(255,255,255,0.95)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🌿</div>
+        <div style={{width:46,height:46,borderRadius:"50%",background:"rgba(255,255,255,0.95)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}>🌿</div>
         <div>
           <div style={{color:"#fff",fontWeight:900,fontSize:15}}>رفيق العافية المشاعرية</div>
           <div style={{color:"rgba(255,255,255,0.72)",fontSize:10}}>{DAYS_AR[new Date().getDay()]}، {new Date().getDate()} {MONTHS_AR[new Date().getMonth()]}</div>
         </div>
       </div>
       <div style={{flex:1,overflowY:"auto",paddingBottom:72}}>
-        {tab==="chat" && <ChatTab data={data} updateData={updateData}/>}
+        {tab==="main" && <MainTab data={data} updateData={updateData}/>}
         {tab==="track" && <TrackTab data={data}/>}
         {tab==="remind" && <RemindTab data={data} updateData={updateData}/>}
       </div>
@@ -51,7 +43,7 @@ export default function App() {
     </div>
   );
 }
-function ChatTab({ data, updateData }) {
+function MainTab({ data, updateData }) {
   const [phase, setPhase] = useState("core");
   const [coreEmotion, setCoreEmotion] = useState(null);
   const [subEmotion, setSubEmotion] = useState(null);
@@ -59,36 +51,24 @@ function ChatTab({ data, updateData }) {
   const [releaseAction, setReleaseAction] = useState(null);
   const [modifyAction, setModifyAction] = useState(null);
   const [expandAction, setExpandAction] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
+
   const logMood = (core, sub) => updateData(prev => {
     const t=todayKey(); const moods=prev.moods||{};
     return {...prev,moods:{...moods,[t]:[...(moods[t]||[]),{time:new Date().toLocaleTimeString("ar",{hour:"2-digit",minute:"2-digit"}),mood:sub||core.core,emoji:core.emoji,positive:core.positive}]}};
   });
+
   const pickCore = (e) => { setCoreEmotion(e); setPhase("sub"); };
   const pickSub = (s) => { setSubEmotion(s); logMood(coreEmotion,s); setPhase("body"); };
   const pickBody = (area) => { setBodyArea(area); setPhase(coreEmotion.positive===false?"allow_neg":"allow_pos"); };
   const goRelease = () => { setReleaseAction(RELEASE_ACTIONS[Math.floor(Math.random()*RELEASE_ACTIONS.length)]); setPhase("release"); };
   const goModify = () => { setModifyAction(MODIFY_ACTIONS[Math.floor(Math.random()*MODIFY_ACTIONS.length)]); setPhase("modify"); };
   const goExpand = () => { setExpandAction(EXPAND_ACTIONS[Math.floor(Math.random()*EXPAND_ACTIONS.length)]); setPhase("expand"); };
-  const gotoChat = async (ctx) => {
-    setPhase("chat"); setLoading(true);
-    try { const r=await callClaude(SYSTEM_PROMPT,[{role:"user",content:ctx}]); setMessages([{role:"assistant",content:r}]); } catch { setMessages([{role:"assistant",content:"معلش في مشكلة، جربي تاني 🌿"}]); }
-    setLoading(false);
-  };
-  const send = async () => {
-    if (!input.trim()||loading) return;
-    const txt=input.trim(); setInput("");
-    const msgs=[...messages,{role:"user",content:txt}]; setMessages(msgs); setLoading(true);
-    try { const r=await callClaude(SYSTEM_PROMPT,msgs); setMessages([...msgs,{role:"assistant",content:r}]); } catch { setMessages([...msgs,{role:"assistant",content:"معلش في مشكلة، جربي تاني 🌿"}]); }
-    setLoading(false);
-  };
-  const reset = () => { setPhase("core"); setCoreEmotion(null); setSubEmotion(null); setBodyArea(null); setReleaseAction(null); setModifyAction(null); setExpandAction(null); setMessages([]); setInput(""); };
+  const reset = () => { setPhase("core"); setCoreEmotion(null); setSubEmotion(null); setBodyArea(null); setReleaseAction(null); setModifyAction(null); setExpandAction(null); };
+
   const Card = ({children,style={}}) => <div style={{background:"#fff",borderRadius:20,padding:20,boxShadow:"0 4px 20px rgba(191,89,216,0.12)",marginBottom:14,...style}}>{children}</div>;
   const GradBtn = ({onClick,children,style={}}) => <button onClick={onClick} style={{width:"100%",padding:"13px",borderRadius:14,border:"none",background:C.grad,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",...style}}>{children}</button>;
   const BackBtn = ({onClick}) => <button onClick={onClick} style={{width:"100%",marginTop:8,padding:"9px",borderRadius:14,border:"none",background:"transparent",color:"#bbb",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>← رجوع</button>;
+
   if (phase==="core") return (
     <div style={{padding:"24px 20px"}}>
       <div style={{textAlign:"center",marginBottom:24}}>
@@ -103,15 +83,16 @@ function ChatTab({ data, updateData }) {
           </button>
         ))}
       </div>
-      <button onClick={()=>gotoChat("المستخدمة عايزة تتكلم بحرية.")} style={{width:"100%",marginTop:14,padding:"12px",borderRadius:16,border:"1.5px dashed rgba(191,89,216,0.4)",background:"transparent",color:"#bf59d8",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>💬 عايزة أتكلم بحرية</button>
       <div style={{marginTop:14,textAlign:"center",fontSize:11,color:"#ccc"}}>رفيق مش بديل عن المتخصصة 🤍</div>
     </div>
   );
+
   if (phase==="sub") return (
     <div style={{padding:"24px 20px"}}>
       <div style={{textAlign:"center",marginBottom:20}}>
         <div style={{fontSize:40}}>{coreEmotion.emoji}</div>
         <div style={{fontSize:17,fontWeight:700,color:"#2d1a4a",marginTop:8}}>أيّ نوع من {coreEmotion.core}؟</div>
+        <div style={{fontSize:12,color:"#999",marginTop:4}}>اختاري الأقرب لحاسسك بيه</div>
       </div>
       <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginBottom:16}}>
         {coreEmotion.sub.map(s=>(
@@ -121,6 +102,7 @@ function ChatTab({ data, updateData }) {
       <BackBtn onClick={reset}/>
     </div>
   );
+
   if (phase==="body") return (
     <div style={{padding:"24px 20px"}}>
       <div style={{textAlign:"center",marginBottom:20}}>
@@ -136,6 +118,7 @@ function ChatTab({ data, updateData }) {
       <BackBtn onClick={()=>setPhase("sub")}/>
     </div>
   );
+
   if (phase==="allow_neg") return (
     <div style={{padding:"24px 20px"}}>
       <Card>
@@ -151,6 +134,7 @@ function ChatTab({ data, updateData }) {
       <BackBtn onClick={()=>setPhase("body")}/>
     </div>
   );
+
   if (phase==="allow_pos") return (
     <div style={{padding:"24px 20px"}}>
       <Card>
@@ -165,6 +149,7 @@ function ChatTab({ data, updateData }) {
       <BackBtn onClick={()=>setPhase("body")}/>
     </div>
   );
+
   if (phase==="release") return (
     <div style={{padding:"24px 20px"}}>
       <div style={{fontSize:12,color:"#888",textAlign:"center",marginBottom:12}}>خطوة 1 من 2 — تحرير الشعور</div>
@@ -182,6 +167,7 @@ function ChatTab({ data, updateData }) {
       <BackBtn onClick={()=>setPhase("allow_neg")}/>
     </div>
   );
+
   if (phase==="modify") return (
     <div style={{padding:"24px 20px"}}>
       <div style={{fontSize:12,color:"#888",textAlign:"center",marginBottom:12}}>خطوة 2 من 2 — تعديل الشعور</div>
@@ -194,11 +180,12 @@ function ChatTab({ data, updateData }) {
       </Card>
       <div style={{display:"flex",gap:10,marginBottom:8}}>
         <button onClick={()=>setModifyAction(MODIFY_ACTIONS[Math.floor(Math.random()*MODIFY_ACTIONS.length)])} style={{flex:1,padding:"11px",borderRadius:14,border:"1.5px solid rgba(191,89,216,0.3)",background:"transparent",color:"#bf59d8",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>🔄 اقتراح تاني</button>
-        <button onClick={()=>gotoChat("المستخدمة حاسة بـ "+subEmotion+" في "+bodyArea+".")} style={{flex:1,padding:"11px",borderRadius:14,border:"none",background:C.grad,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>💬 أكملي مع رفيق</button>
+        <button onClick={reset} style={{flex:1,padding:"11px",borderRadius:14,border:"none",background:C.grad,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>🔄 جلسة جديدة</button>
       </div>
       <BackBtn onClick={()=>setPhase("release")}/>
     </div>
   );
+
   if (phase==="expand") return (
     <div style={{padding:"24px 20px"}}>
       <Card>
@@ -210,29 +197,13 @@ function ChatTab({ data, updateData }) {
       </Card>
       <div style={{display:"flex",gap:10,marginBottom:8}}>
         <button onClick={()=>setExpandAction(EXPAND_ACTIONS[Math.floor(Math.random()*EXPAND_ACTIONS.length)])} style={{flex:1,padding:"11px",borderRadius:14,border:"1.5px solid rgba(191,89,216,0.3)",background:"transparent",color:"#bf59d8",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>🔄 اقتراح تاني</button>
-        <button onClick={()=>gotoChat("المستخدمة حاسة بـ "+subEmotion+" في "+bodyArea+".")} style={{flex:1,padding:"11px",borderRadius:14,border:"none",background:C.grad,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>💬 أكملي مع رفيق</button>
+        <button onClick={reset} style={{flex:1,padding:"11px",borderRadius:14,border:"none",background:C.grad,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>🔄 جلسة جديدة</button>
       </div>
       <BackBtn onClick={()=>setPhase("allow_pos")}/>
     </div>
   );
-  return (
-    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 128px)"}}>
-      <div style={{flex:1,overflowY:"auto",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
-        {messages.map((m,i)=>(
-          <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-start":"flex-end"}}>
-            <div style={{maxWidth:"78%",padding:"10px 14px",lineHeight:1.8,fontSize:14,borderRadius:m.role==="user"?"18px 18px 18px 4px":"18px 18px 4px 18px",background:m.role==="user"?C.grad:"#fff",color:m.role==="user"?"#fff":"#2d1a4a",boxShadow:"0 2px 10px rgba(191,89,216,0.12)"}}>{m.content}</div>
-          </div>
-        ))}
-        {loading && <div style={{display:"flex",justifyContent:"flex-end"}}><div style={{background:"#fff",padding:"12px 16px",borderRadius:"18px 18px 4px 18px"}}>...</div></div>}
-        <div ref={bottomRef}/>
-      </div>
-      <div style={{padding:"10px 14px 12px",background:"#fff",borderTop:"1px solid rgba(191,89,216,0.12)",display:"flex",gap:8}}>
-        <button onClick={reset} style={{background:C.gradSoft,border:"none",borderRadius:12,padding:"0 12px",cursor:"pointer",fontSize:15}}>🔄</button>
-        <textarea value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}} placeholder="اكتبي هنا..." rows={1} style={{flex:1,border:"1.5px solid rgba(191,89,216,0.28)",borderRadius:18,padding:"10px 14px",fontSize:14,fontFamily:"inherit",background:"#faf8ff",color:"#2d1a4a",outline:"none",resize:"none",direction:"rtl"}}/>
-        <button onClick={send} disabled={loading||!input.trim()} style={{width:42,height:42,borderRadius:"50%",background:loading||!input.trim()?"#ddd":C.grad,border:"none",cursor:"pointer",color:"#fff",fontSize:17}}>➤</button>
-      </div>
-    </div>
-  );
+
+  return null;
 }
 function TrackTab({ data }) {
   const [viewDate, setViewDate] = useState(todayKey());
